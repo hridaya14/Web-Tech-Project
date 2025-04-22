@@ -10,10 +10,14 @@ func main() {
 
 	orm.Init()
 
-	_, err := server.CreateServer()
+	server, err := server.CreateServer()
 
 	if err != nil {
 		log.Fatal("Unable to start server!")
+	}
+
+	if err := server.Run(":8000"); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
 	}
 	
 }

@@ -1,0 +1,131 @@
+package handlers
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/hridaya14/Web-Tech-Project/internal/database"
+	"github.com/hridaya14/Web-Tech-Project/internal/models"
+	"github.com/hridaya14/Web-Tech-Project/pkg/auth"
+	"net/http"
+	"os"
+)
+
+var (
+	isProd = os.Getenv("ENV") == "production"
+)
+
+const (
+	CANDIDATE = "candidate"
+	ADMIN     = "admin"
+	COMPANY   = "company"
+)
+
+type LoginInput struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+type RegisterInput struct {
+	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+	Role     string `json:"role" binding:"required,oneof=candidate company admin"`
+}
+
+func RegisterHandler(c *gin.Context) {
+
+	//Validate request
+	var input RegisterInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	//Checking for existing user
+	exists, err := database.CheckUserExists(input.Email)
+
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": "failed to check user existence"})
+		return
+	}
+	if exists {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"Error": "User with this email already exists."})
+		return
+	}
+
+	//Hashing password
+	hashedPass, err := auth.HashPassword(input.Password)
+
+	//Creating user
+	user := models.User{
+		Username:     input.Username,
+		Email:        input.Email,
+		PasswordHash: hashedPass,
+		Role:         input.Role,
+	}
+
+	err = database.CreateUser(&user)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": "Unable to create user!"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"Message": "Successfuly Created User"})
+}
+
+func LoginHandler(c *gin.Context) {
+
+	//Validate request body
+	var input LoginInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	//Retrieve user
+	user, err := database.GetUserByEmail(input.Email)
+
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"Error": "Unable to find user with provided email"})
+		return
+	}
+
+	//Compare pass with hashed password
+	err = auth.CheckPassword(user.PasswordHash, input.Password)
+
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"Error": "Incorrect Password"})
+		return
+	}
+
+	// Generate Token
+	signedToken, err := auth.CreateToken(user.Username, user.Role)
+
+	if err != nil {
+		c.JSON(
+			http.StatusBadGateway,
+			gin.H{"Error": "Unable to process request"})
+		return
+	}
+
+	c.SetCookie("token", // Token Name
+		signedToken, // Token
+		3600,        //Age
+		"/",
+		"localhost",
+		isProd, //Https
+		true)   // Httponly
+
+	c.JSON(http.StatusOK, gin.H{"Message": "Successfully created the user"})
+	return
+
+}
