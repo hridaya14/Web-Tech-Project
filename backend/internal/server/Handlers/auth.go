@@ -88,14 +88,25 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	//Retrieve user
+	exists, err := database.CheckUserExists(input.Email)
+
+	if !exists || err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"Error": "Unable to login with provided credentials"},
+		)
+	}
+
 	user, err := database.GetUserByEmail(input.Email)
 
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
-			gin.H{"Error": "Unable to find user with provided email"})
+			gin.H{"Error": err})
 		return
 	}
+
+	needsOnboarding := user.OnboardingStatus == "NOT_STARTED" || user.OnboardingStatus == "IN_PROGRESS"
 
 	//Compare pass with hashed password
 	err = auth.CheckPassword(user.PasswordHash, input.Password)
@@ -108,7 +119,7 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	// Generate Token
-	signedToken, err := auth.CreateToken(user.Username, user.Role)
+	signedToken, err := auth.CreateToken(user.ID, user.Username, user.Role)
 
 	if err != nil {
 		c.JSON(
@@ -117,15 +128,21 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
+	age := 60 * 60 * 24 * 30
 	c.SetCookie("token", // Token Name
 		signedToken, // Token
-		3600,        //Age
+		age,         //Age
 		"/",
 		"localhost",
 		isProd, //Https
 		true)   // Httponly
 
-	c.JSON(http.StatusOK, gin.H{"Message": "Successfully created the user"})
+	c.JSON(http.StatusOK, gin.H{
+		"Message":         "Successfully logged in user",
+		"needsOnboarding": needsOnboarding,
+		"role":            user.Role,
+	})
+
 	return
 
 }

@@ -2,11 +2,11 @@ package auth
 
 import (
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
 	"time"
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func GetSecretKey() []byte {
@@ -17,14 +17,15 @@ func GetSecretKey() []byte {
 	return []byte(secret)
 }
 
-func CreateToken(username string, role string) (string, error) {
+func CreateToken(id int, username string, role string) (string, error) {
 	// Create a new JWT token with claims
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": username,                         // Subject (user identifier)
-		"iss": "JobHunt AI",                     // Issuer
-		"aud": role,                             // User Role
-		"exp": time.Now().Add(time.Hour).Unix(), // Expiration time
-		"iat": time.Now().Unix(),                // Issued at
+		"user": id,
+		"sub":  username,                         // Subject (user identifier)
+		"iss":  "JobHunt AI",                     // Issuer
+		"aud":  role,                             // User Role
+		"exp":  time.Now().Add(time.Hour).Unix(), // Expiration time
+		"iat":  time.Now().Unix(),                // Issued at
 	})
 
 	// Print information about the created token

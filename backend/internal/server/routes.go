@@ -2,7 +2,6 @@ package server
 
 import (
 	"net/http"
-
 	"github.com/gin-gonic/gin"
 	handlers "github.com/hridaya14/Web-Tech-Project/internal/server/Handlers"
 )
@@ -21,7 +20,8 @@ func registerRoutes(router *gin.Engine) (*gin.Engine, error) {
 	})
 
 	//Profile Onboarding
-	router.GET("/getProfile",authenticateMiddleware,handlers.GetProfile)
+	router.GET("/getProfile", authenticateMiddleware, handlers.GetProfile)
+	router.POST("/profile/createCandidate", authenticateMiddleware, handlers.CreateCandidateProfile)
 
 	//Job Seeker
 

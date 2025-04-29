@@ -28,7 +28,15 @@ export default function LoginPage() {
                 return;
             }
 
-            router.push("/dashboard");
+            const data = await res.json()
+
+            // Redirect logic
+            if (data.needsOnboarding) {
+                router.push("/profile/onboarding");
+            } else {
+                router.push("/dashboard");
+            }
+
         } catch (err: any) {
             setError("Something went wrong. Try again.");
         }

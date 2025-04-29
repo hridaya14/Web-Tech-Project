@@ -1,6 +1,9 @@
 package database
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
 	"github.com/hridaya14/Web-Tech-Project/internal/models"
 	"github.com/hridaya14/Web-Tech-Project/pkg/orm"
 )
@@ -17,13 +20,15 @@ func CreateUser(user *models.User) error {
 	return err
 }
 
-// GetUserByEmail returns a user by email for login validation
 func GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	query := `SELECT * FROM users WHERE email = $1`
 	err := orm.DB.Get(&user, query, email)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err // actual DB error
 	}
 	return &user, nil
 }
@@ -38,7 +43,7 @@ func CheckUserExists(email string) (bool, error) {
 
 func GetUserByUsername(username string) (*models.User, error) {
 	var user models.User
-	query := "SELECT username, email, role FROM users WHERE username = $1"
+	query := "SELECT username, email, role, onboarding_status FROM users WHERE username = $1"
 	err := orm.DB.Get(&user, query, username)
 	if err != nil {
 		return nil, err
