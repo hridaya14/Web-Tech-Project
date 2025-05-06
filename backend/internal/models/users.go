@@ -1,11 +1,12 @@
 package models
 
 import (
+	"github.com/google/uuid"
 	"time"
 )
 
 type User struct {
-	ID               int       `db:"id"`
+	ID               uuid.UUID `db:"id"`
 	Username         string    `db:"username"`
 	Email            string    `db:"email"`
 	PasswordHash     string    `db:"password_hash"`
@@ -15,6 +16,6 @@ type User struct {
 }
 
 type AuthenticatedUser struct {
-	ID       int
+	ID       uuid.UUID
 	Username string
 }

@@ -16,7 +16,7 @@ func main() {
 		log.Fatal("Unable to start server!")
 	}
 
-	if err := server.Run(":8000"); err != nil {
+	if err := server.Run(":5000"); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 	

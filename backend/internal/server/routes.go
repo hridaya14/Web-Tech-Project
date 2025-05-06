@@ -1,9 +1,9 @@
 package server
 
 import (
-	"net/http"
 	"github.com/gin-gonic/gin"
 	handlers "github.com/hridaya14/Web-Tech-Project/internal/server/Handlers"
+	"net/http"
 )
 
 func registerRoutes(router *gin.Engine) (*gin.Engine, error) {
@@ -15,6 +15,7 @@ func registerRoutes(router *gin.Engine) (*gin.Engine, error) {
 	// Auth Handlers
 	router.POST("/auth/login", handlers.LoginHandler)
 	router.POST("/auth/register", handlers.RegisterHandler)
+	router.POST("/auth/logout", handlers.LogoutHandler)
 	router.GET("/home", authenticateMiddleware, func(g *gin.Context) {
 		g.JSON(http.StatusOK, gin.H{"Message ": "Welcome!!"})
 	})
@@ -22,10 +23,18 @@ func registerRoutes(router *gin.Engine) (*gin.Engine, error) {
 	//Profile Onboarding
 	router.GET("/getProfile", authenticateMiddleware, handlers.GetProfile)
 	router.POST("/profile/createCandidate", authenticateMiddleware, handlers.CreateCandidateProfile)
+	router.POST("/profile/createCompany", authenticateMiddleware, handlers.CreateCompanyProfile)
 
 	//Job Seeker
+	router.GET("/candidate/getJobs", authenticateMiddleware, handlers.GetFilteredJobListings)
+	router.POST("candidate/apply", authenticateMiddleware, handlers.CreateJobApplication)
+	router.GET("/candidate/Applications", authenticateMiddleware, handlers.GetCandidateApplications)
+	router.GET("/candidate/:id", authenticateMiddleware, handlers.GetCandidateHandler)
 
 	//Company
+	router.POST("/company/createListing", authenticateMiddleware, handlers.CreateJob)
+	router.GET("/company/getListings", authenticateMiddleware, handlers.GetJobListings)
+	router.GET("/company/Applicants", authenticateMiddleware, handlers.GetCompanyApplicants)
 
 	return router, nil
 }

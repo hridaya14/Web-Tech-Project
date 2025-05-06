@@ -4,28 +4,29 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 // Database Definitions
 type Candidate struct {
-	ID            uuid.UUID `json:"id" db:"id"`
-	UserID        int       `json:"user_id" db:"user_id"`
-	FullName      string    `json:"full_name" db:"full_name"`
-	Location      string    `json:"location"  db:"location"`
-	PhoneNumber   string    `json:"phone_number" db:"phone"`
-	LinkedInURL   *string   `json:"linkedin_url" db:"linkedin_url"`   // nullable
-	PortfolioURL  *string   `json:"portfolio_url" db:"portfolio_url"` // nullable
-	ResumeURL     string    `json:"resume_url" db:"resume_url"`
-	Skills        []string  `json:"skills" db:"skills"`
-	Experience    int       `json:"experience_years" db:"experience_years"`
-	ExpectedRoles []string  `json:"expected_roles" db:"expected_roles"` // ARRAY
-	CurrentStatus string    `json:"current_status" db:"current_status"` // ENUM
-	CreatedAt     time.Time `json:"created_at" db:"created_at"`
+	ID            uuid.UUID      `json:"id" db:"id"`
+	UserID        uuid.UUID      `json:"user_id" db:"user_id"`
+	FullName      string         `json:"full_name" db:"full_name"`
+	Location      string         `json:"location"  db:"location"`
+	PhoneNumber   string         `json:"phone_number" db:"phone"`
+	LinkedInURL   *string        `json:"linkedin_url" db:"linkedin_url"`   // nullable
+	PortfolioURL  *string        `json:"portfolio_url" db:"portfolio_url"` // nullable
+	ResumeURL     string         `json:"resume_url" db:"resume_url"`
+	Skills        pq.StringArray `json:"skills" db:"skills"`
+	Experience    int            `json:"experience_years" db:"experience_years"`
+	ExpectedRoles string         `json:"expected_roles" db:"expected_role"`  // ARRAY
+	CurrentStatus string         `json:"current_status" db:"current_status"` // ENUM
+	CreatedAt     time.Time      `json:"created_at" db:"created_at"`
 }
 
 type Company struct {
 	ID                 uuid.UUID `json:"id" db:"id"`
-	UserID             int       `json:"user_id" db:"user_id"`
+	UserID             uuid.UUID `json:"user_id" db:"user_id"`
 	CompanyName        string    `json:"company_name" db:"company_name"`
 	WebsiteURL         string    `json:"website_url" db:"company_website"` // nullable
 	CompanySize        string    `json:"company_size" db:"company_size"`
