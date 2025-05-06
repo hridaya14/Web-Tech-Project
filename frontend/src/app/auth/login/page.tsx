@@ -19,7 +19,7 @@ export default function LoginPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
-                credentials: "include", // crucial for cookies
+                credentials: "include",
             });
 
             if (!res.ok) {
@@ -28,15 +28,19 @@ export default function LoginPage() {
                 return;
             }
 
-            const data = await res.json()
+            const data = await res.json();
 
-            // Redirect logic
             if (data.needsOnboarding) {
                 router.push("/profile/onboarding");
             } else {
-                router.push("/dashboard");
+                if (data.role === "company") {
+                    router.push("/company/listings");
+                } else if (data.role === "candidate") {
+                    router.push("/candidate/jobs");
+                } else {
+                    router.push("/auth/login"); // fallback
+                }
             }
-
         } catch (err: any) {
             setError("Something went wrong. Try again.");
         }

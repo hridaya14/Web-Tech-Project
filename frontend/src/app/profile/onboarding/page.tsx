@@ -1,6 +1,7 @@
 'use client'
 import { CandidateOnboarding } from '@/app/components/signup/CandidateOnboarding'
 import { CompanyOnboarding } from '@/app/components/signup/CompanyOnboarding'
+import { getProfile } from '@/utils/profile'
 import { redirect } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -14,14 +15,13 @@ const Onboarding = () => {
 
             try {
 
-                const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/getProfile`, { credentials: "include" });
-                const data = await res.json();
+                const user = await getProfile()
 
-                if (!data.needsOnboarding) {
+                if (!user.needsOnboarding) {
                     redirect("/dashboard")
                 }
 
-                setRole(data.role)
+                setRole(user.role)
                 setIsloading(false)
 
             }

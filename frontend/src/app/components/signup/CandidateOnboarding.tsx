@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export const CandidateOnboarding = () => {
+    const router = useRouter()
     const [formData, setFormData] = useState({
         full_name: '',
         phone: '',
@@ -70,10 +72,11 @@ export const CandidateOnboarding = () => {
             }
 
             alert('🎉 Candidate profile submitted successfully!');
+            router.push("/candidate/dashboard")
             console.log('✅ Server Response:', result);
         } catch (err: any) {
-            alert(`❌ Error: ${err.message}`);
             console.error('Upload Error:', err);
+            router.push("/profile/onboarding")
         }
     };
 
