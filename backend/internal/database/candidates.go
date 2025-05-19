@@ -2,13 +2,12 @@ package database
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/google/uuid"
 	"github.com/hridaya14/Web-Tech-Project/internal/models"
 	"github.com/hridaya14/Web-Tech-Project/pkg/orm"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"log"
 )
 
 func GetJobListings(filters models.JobListingFilters) ([]models.JobListing, error) {
@@ -21,42 +20,36 @@ func GetJobListings(filters models.JobListingFilters) ([]models.JobListing, erro
 	args := []interface{}{}
 	argIndex := 1
 
-	// Filter by work_type
 	if filters.WorkType != "" {
 		baseQuery += fmt.Sprintf(" AND work_type = $%d", argIndex)
 		args = append(args, filters.WorkType)
 		argIndex++
 	}
 
-	// Filter by job_type
 	if filters.JobType != "" {
 		baseQuery += fmt.Sprintf(" AND job_type = $%d", argIndex)
 		args = append(args, filters.JobType)
 		argIndex++
 	}
 
-	// Filter by experience_level
 	if filters.ExperienceLevel != "" {
 		baseQuery += fmt.Sprintf(" AND experience_level = $%d", argIndex)
 		args = append(args, filters.ExperienceLevel)
 		argIndex++
 	}
 
-	// Filter by salary range
 	if filters.SalaryRange != "" {
 		baseQuery += fmt.Sprintf(" AND salary_range = $%d", argIndex)
 		args = append(args, filters.SalaryRange)
 		argIndex++
 	}
 
-	// Filter by required skills
 	if len(filters.RequiredSkills) > 0 {
 		baseQuery += fmt.Sprintf(" AND required_skills && $%d", argIndex)
 		args = append(args, pq.StringArray(filters.RequiredSkills))
 		argIndex++
 	}
 
-	// Order by creation date, newest first
 	baseQuery += " ORDER BY created_at DESC"
 
 	err := orm.DB.Select(&listings, baseQuery, args...)
@@ -79,7 +72,6 @@ func CreateApplication(candidateID uuid.UUID, jobID uuid.UUID) error {
 
 }
 
-// GetApplicationsByCandidateID retrieves applications based on candidate_id.
 func GetApplicationsByCandidateID(candidateID uuid.UUID) ([]models.Application, error) {
 	query := `
         SELECT application_id, candidate_id, job_id, status, applied_at
@@ -100,6 +92,42 @@ func GetApplicationsByJobID(jobID uuid.UUID) ([]models.Application, error) {
 	var applications []models.Application
 	err := orm.DB.Select(&applications, query, jobID)
 	return applications, err
+}
+
+func DeleteApplicationByID(applicationID, candidateID uuid.UUID) error {
+	var exists bool
+	queryCheck := `
+        SELECT EXISTS (
+            SELECT 1 FROM applications
+            WHERE application_id = $1 AND candidate_id = $2
+        )
+    `
+	err := orm.DB.Get(&exists, queryCheck, applicationID, candidateID)
+	if err != nil {
+		log.Printf("Error checking application ownership: %v", err)
+		return fmt.Errorf("could not verify application ownership: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("unauthorized: candidate does not own this application or it does not exist")
+	}
+
+	queryDelete := `DELETE FROM applications WHERE application_id = $1`
+	result, err := orm.DB.Exec(queryDelete, applicationID)
+	if err != nil {
+		log.Printf("Error deleting application: %v", err)
+		return fmt.Errorf("could not delete application: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Error checking rows affected: %v", err)
+		return fmt.Errorf("could not verify application deletion: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("application not found or already deleted")
+	}
+
+	return nil
 }
 
 func GetApplicantPoolsByCompanyID(companyID uuid.UUID) ([]models.ApplicantPool, error) {

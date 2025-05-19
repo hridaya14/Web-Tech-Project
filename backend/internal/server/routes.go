@@ -30,11 +30,14 @@ func registerRoutes(router *gin.Engine) (*gin.Engine, error) {
 	router.POST("candidate/apply", authenticateMiddleware, handlers.CreateJobApplication)
 	router.GET("/candidate/Applications", authenticateMiddleware, handlers.GetCandidateApplications)
 	router.GET("/candidate/:id", authenticateMiddleware, handlers.GetCandidateHandler)
+	router.POST("/candidate/deleteApplication", authenticateMiddleware, handlers.DeleteApplication)
 
 	//Company
 	router.POST("/company/createListing", authenticateMiddleware, handlers.CreateJob)
 	router.GET("/company/getListings", authenticateMiddleware, handlers.GetJobListings)
 	router.GET("/company/Applicants", authenticateMiddleware, handlers.GetCompanyApplicants)
+	router.POST("/company/deleteListing", authenticateMiddleware, handlers.DeleteCompanyListing)
+	router.GET("/getListing/:job_id", authenticateMiddleware, handlers.GetJobDetailsHandler)
 
 	return router, nil
 }

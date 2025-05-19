@@ -147,6 +147,35 @@ const Listings: React.FC = () => {
         }
     };
 
+    const handleDeleteListing = async (listingId) => {
+        if (!listingId) {
+            alert("Could not determine listing ID to delete.");
+            return;
+        }
+
+        if (!window.confirm("Are you sure you want to delete this job listing?")) return;
+
+        try {
+            const resp = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/company/deleteListing`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ listing_id: listingId }),
+            });
+
+            if (!resp.ok) {
+                const data = await resp.json();
+                throw new Error(data.error || "Failed to delete listing");
+            }
+
+            fetchListings(); // Refresh listings after delete
+            setShowModal(false);
+        } catch (err) {
+            alert(err.message || "Could not delete the listing.");
+        }
+    };
+
+
     return (
         <div className="min-h-[100dvh] bg-gradient-to-br from-slate-800 to-slate-900 px-4 py-10 text-slate-200 font-sans">
             {/* Header */}
@@ -238,6 +267,21 @@ const Listings: React.FC = () => {
                                 <>Posted on: {new Date(selectedListing.created_at).toLocaleDateString()}</>
                             )}
                         </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                            <button
+                                onClick={handleModalClose}
+                                className="bg-slate-700 hover:bg-slate-800 text-indigo-100 px-5 py-2 rounded-lg font-semibold transition"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={() => handleDeleteListing(selectedListing?.ID)}
+                                className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-semibold transition border-b-2 border-red-900"
+                            >
+                                Delete
+                            </button>
+                        </div>
+
                     </div>
                 </Modal>
             )}

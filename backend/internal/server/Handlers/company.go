@@ -11,17 +11,8 @@ import (
 )
 
 func CreateJob(c *gin.Context) {
-
-	value, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"Message": "User not found in context"})
-		return
-	}
-
-	// Type assert
-	userContext, ok := value.(*models.AuthenticatedUser)
+	companyID, _, ok := GetAuthenticatedID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"Message": "Invalid user context type"})
 		return
 	}
 
@@ -31,19 +22,7 @@ func CreateJob(c *gin.Context) {
 		return
 	}
 
-	companyID, err := database.GetUserRelatedID(userContext.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to process request"})
-		return
-	}
-
-	id, ok := companyID.(uuid.UUID)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"Message": "Invalid user context type"})
-		return
-	}
-
-	listing, err := database.CreateJobListing(input, id)
+	listing, err := database.CreateJobListing(input, companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to process request"})
 		return
@@ -58,74 +37,54 @@ func CreateJob(c *gin.Context) {
 }
 
 func GetJobListings(c *gin.Context) {
-	// Get user from the context (assuming it's already set during authentication)
-	value, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"Message": "User not found in context"})
-		return
-	}
-
-	// Type assert to get user context
-	userContext, ok := value.(*models.AuthenticatedUser)
+	companyID, _, ok := GetAuthenticatedID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"Message": "Invalid user context type"})
 		return
 	}
 
-	// Fetch the company ID associated with the user
-	companyID, err := database.GetUserRelatedID(userContext.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to process request"})
-		return
-	}
-
-	// Type assert the companyID (uuid.UUID)
-	id, ok := companyID.(uuid.UUID)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"Message": "Invalid user context type"})
-		return
-	}
-
-	// Get the job listings for the company from the database
-	listings, err := database.GetJobListingsByCompanyID(id)
+	listings, err := database.GetJobListingsByCompanyID(companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to fetch job listings"})
 		return
 	}
 
-	// Return the listings as a JSON response
 	c.JSON(http.StatusOK, gin.H{
 		"Message":  "Successfully fetched job listings",
 		"Listings": listings,
 	})
 }
 
-func GetCompanyApplicants(c *gin.Context) {
-	value, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"Message": "User not found in context"})
-		return
-	}
+type getJobDetailsRequest struct {
+	JobID string `json:"job_id" binding:"required"`
+}
 
-	userContext, ok := value.(*models.AuthenticatedUser)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"Message": "Invalid user context type"})
-		return
-	}
-
-	rawID, err := database.GetUserRelatedID(userContext.ID)
+func GetJobDetailsHandler(c *gin.Context) {
+	jobIDParam := c.Param("job_id")
+	jobID, err := uuid.Parse(jobIDParam)
 	if err != nil {
-		log.Printf("Error %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to process request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job_id format"})
 		return
 	}
 
-	companyID, ok := rawID.(uuid.UUID)
+	job, err := database.GetJobListingByID(jobID)
+	if err != nil {
+		if err.Error() == "job listing not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Job listing not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch job details"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"job": job})
+}
+
+func GetCompanyApplicants(c *gin.Context) {
+
+	companyID, _, ok := GetAuthenticatedID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid ID format returned from database"})
 		return
 	}
-
 	applications, err := database.GetApplicantPoolsByCompanyID(companyID)
 	if err != nil {
 		log.Printf("Error %v", err)
@@ -134,4 +93,45 @@ func GetCompanyApplicants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"applications": applications})
+}
+
+type deleteListingRequest struct {
+	ListingID string `json:"listing_id" binding:"required"`
+}
+
+func DeleteCompanyListing(c *gin.Context) {
+
+	companyID, _, ok := GetAuthenticatedID(c)
+	if !ok {
+		return
+	}
+
+	var req deleteListingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing or invalid listing_id"})
+		return
+	}
+
+	listingID, err := uuid.Parse(req.ListingID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid listing_id format"})
+		return
+	}
+
+	// Call your delete logic
+	err = database.DeleteJobListingByID(listingID, companyID)
+	if err != nil {
+		if err.Error() == "unauthorized: this company does not own the job listing" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You are not authorized to delete this listing"})
+			return
+		}
+		if err.Error() == "job listing not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Listing not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete listing"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Listing deleted successfully"})
 }

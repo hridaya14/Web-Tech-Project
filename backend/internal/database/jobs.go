@@ -85,3 +85,33 @@ func GetJobListingsByCompanyID(companyID uuid.UUID) ([]models.JobListing, error)
 
 	return listings, nil
 }
+
+func DeleteJobListingByID(listingID, companyID uuid.UUID) error {
+	listing, err := GetJobListingByID(listingID)
+	if err != nil {
+		return err
+	}
+
+	if listing.Company_id != companyID {
+		return fmt.Errorf("unauthorized: this company does not own the job listing")
+	}
+
+	query := `DELETE FROM job_listings WHERE id = $1`
+	result, err := orm.DB.Exec(query, listingID)
+	if err != nil {
+		log.Printf("Error deleting job listing: %v", err)
+		return fmt.Errorf("could not delete job listing: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Error fetching rows affected: %v", err)
+		return fmt.Errorf("could not verify job listing deletion: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("job listing could not be deleted (already removed?)")
+	}
+
+	return nil
+}
