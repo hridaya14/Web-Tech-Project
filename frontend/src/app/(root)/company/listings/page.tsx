@@ -139,7 +139,8 @@ const Listings: React.FC = () => {
             });
             if (!resp.ok) throw new Error('Failed to create');
             const newListing = await resp.json();
-            setListings([...listings, newListing]);
+            console.log(newListing)
+            fetchListings();  // Refetches entire listings list from backend
             setCreating(false);
         } catch (err) {
             setFormError('Could not create listing.');
