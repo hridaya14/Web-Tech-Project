@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, ChangeEvent, FormEvent } from 'react';
-import ListingCard, { JobListing } from '@/app/components/company/ListingCard';
+import ListingCard from '@/app/components/company/ListingCard';
 import Modal from '@/app/components/company/Modal';
 import { useRouter } from 'next/navigation';
 

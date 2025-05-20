@@ -1,18 +1,7 @@
+import { JobListing } from "@/app/(root)/company/listings/page";
 import React from "react";
 
-export interface JobListing {
-    ID?: number;
-    Listing_title: string;
-    Description: string;
-    Location: string;
-    Work_type: string;
-    Job_type: string;
-    Experience_type: string;
-    Experience_months: string;
-    Salary_range: string;
-    Required_skills: string[];
-    created_at?: string;
-}
+
 
 interface ListingCardProps {
     listing: JobListing;
