@@ -21,6 +21,21 @@ const SALARY_RANGES = [
 
 const backendUrl = '/company/getListings';
 
+// Make sure your JobListing interface looks like this:
+export interface JobListing {
+    Listing_title: string;
+    Description: string;
+    Location: string;
+    Work_type: string;
+    Job_type: string;
+    Experience_type: string;
+    Experience_months: number; // <-- number type
+    Salary_range: string;
+    Required_skills: string[];
+    ID?: string;
+    created_at?: string;
+}
+
 const initialListing: JobListing = {
     Listing_title: '',
     Description: '',
@@ -28,7 +43,7 @@ const initialListing: JobListing = {
     Work_type: '',
     Job_type: '',
     Experience_type: '',
-    Experience_months: 0, // <-- integer default
+    Experience_months: 0, // integer default
     Salary_range: '',
     Required_skills: [],
 };
@@ -103,7 +118,7 @@ const Listings: React.FC = () => {
     };
 
     const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
         // Map form field names to JobListing property names
         const fieldMapping: Record<string, keyof JobListing> = {
             title: 'Listing_title',
@@ -117,9 +132,12 @@ const Listings: React.FC = () => {
         };
         const listingField = fieldMapping[name] || (name as keyof JobListing);
 
-        // Ensure experience_months is always a number
         if (listingField === 'Experience_months') {
-            setForm({ ...form, [listingField]: value === '' ? 0 : parseInt(value, 10) });
+            // Always keep as number
+            const num = (e.target as HTMLInputElement).valueAsNumber;
+            setForm({ ...form, [listingField]: isNaN(num) ? 0 : num });
+        } else if (listingField === 'Required_skills') {
+            setForm({ ...form, Required_skills: value.split(',').map(x => x.trim()) });
         } else {
             setForm({ ...form, [listingField]: value });
         }
@@ -133,11 +151,7 @@ const Listings: React.FC = () => {
         e.preventDefault();
         setFormError('');
         try {
-            // Ensure Experience_months is always an integer in the payload
-            const payload = {
-                ...form,
-                Experience_months: Number(form.Experience_months) || 0
-            };
+            const payload = { ...form };
 
             const resp = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/company/createListing`, {
                 method: 'POST',
@@ -146,15 +160,15 @@ const Listings: React.FC = () => {
                 credentials: 'include'
             });
             if (!resp.ok) throw new Error('Failed to create');
-            const newListing = await resp.json();
-            fetchListings();  // Refetches entire listings list from backend
+            await resp.json();
+            fetchListings();
             setCreating(false);
         } catch (err) {
             setFormError('Could not create listing.');
         }
     };
 
-    const handleDeleteListing = async (listingId) => {
+    const handleDeleteListing = async (listingId?: string) => {
         if (!listingId) {
             alert("Could not determine listing ID to delete.");
             return;
@@ -175,10 +189,10 @@ const Listings: React.FC = () => {
                 throw new Error(data.error || "Failed to delete listing");
             }
 
-            fetchListings(); // Refresh listings after delete
+            fetchListings();
             setShowModal(false);
         } catch (err) {
-            alert(err.message || "Could not delete the listing.");
+            alert((err as Error).message || "Could not delete the listing.");
         }
     };
 
