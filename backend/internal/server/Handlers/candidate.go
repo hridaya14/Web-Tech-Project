@@ -60,8 +60,13 @@ func CreateJobApplication(c *gin.Context) {
 		return
 	}
 
-	// Create application
-	err = database.CreateApplication(candidateID, jobID)
+	score, err := GetJobListingScore(candidateID.String(), jobID.String())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job ID"})
+		return
+	}
+
+	err = database.CreateApplication(candidateID, jobID, score)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create application"})
 		return

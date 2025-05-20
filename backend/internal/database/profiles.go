@@ -13,9 +13,9 @@ import (
 func CreateCandidate(candidate models.CandidateRequest, userID uuid.UUID) (models.Candidate, error) {
 
 	query := `
-		INSERT INTO candidates (user_id, full_name, phone, location, linkedin_url, portfolio_url, resume_url, skills, experience_years, expected_role, current_status, created_at)
+		INSERT INTO candidates (user_id, full_name, phone, location, linkedin_url, portfolio_url, resume_url, skills, experience_months, expected_role, current_status, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-		RETURNING id, user_id, full_name, location, phone, linkedin_url, portfolio_url, resume_url, skills, experience_years, expected_role, current_status, created_at;
+		RETURNING id, user_id, full_name, location, phone, linkedin_url, portfolio_url, resume_url, skills, experience_months, expected_role, current_status, created_at;
 	`
 
 	// Preparing the data to be inserted
@@ -39,7 +39,7 @@ func CreateCandidate(candidate models.CandidateRequest, userID uuid.UUID) (model
 		candidate.PortfolioURL,      // Portfolio URL
 		candidate.ResumeURL,         // Resume URL
 		pq.StringArray(skillsArray), // Skills
-		candidate.ExperienceYears,   // Experience years
+		candidate.ExperienceMonths,  // Experience years
 		expectedRole,                // Expected roles (array)
 		candidate.CurrentStatus,     // Current status
 		createdAt,                   // CreatedAt timestamp
@@ -96,7 +96,7 @@ func GetCandidateByID(candidateID uuid.UUID) (models.Candidate, error) {
 
 	query := `
 		SELECT id, user_id, full_name, location, phone, linkedin_url, portfolio_url, resume_url,
-		       skills, experience_years, expected_role, current_status, created_at
+		       skills, experience_months, expected_role, current_status, created_at
 		FROM candidates
 		WHERE id = $1
 	`

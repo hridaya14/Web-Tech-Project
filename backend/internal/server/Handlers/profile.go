@@ -129,18 +129,16 @@ func CreateCandidateProfile(c *gin.Context) {
 	input.FullName = c.PostForm("full_name")
 	input.Phone = c.PostForm("phone")
 	input.Location = c.PostForm("location")
-	input.LinkedInURL = c.PostForm("linkedin_url")   // now string
-	input.PortfolioURL = c.PostForm("portfolio_url") // now string
+	input.LinkedInURL = c.PostForm("linkedin_url")
+	input.PortfolioURL = c.PostForm("portfolio_url")
 	input.CurrentStatus = c.PostForm("current_status")
 
-	// Convert experience years to int
-	if exp := c.PostForm("experience_years"); exp != "" {
-		if years, err := strconv.Atoi(exp); err == nil {
-			input.ExperienceYears = years
+	if exp := c.PostForm("experience_months"); exp != "" {
+		if months, err := strconv.Atoi(exp); err == nil {
+			input.ExperienceMonths = months
 		}
 	}
 
-	// Parse comma-separated lists (handle empty string case gracefully)
 	if skills := c.PostForm("skills"); skills != "" {
 		input.Skills = strings.Split(skills, ",")
 	}
@@ -157,7 +155,7 @@ func CreateCandidateProfile(c *gin.Context) {
 	defer file.Close()
 
 	// Initialize S3 uploader
-	uploader, err := bucket.NewUploader() // Replace with your S3 bucket
+	uploader, err := bucket.NewUploader()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize S3 uploader"})
 		return
@@ -177,43 +175,12 @@ func CreateCandidateProfile(c *gin.Context) {
 		return
 	}
 
-	// postPayload := map[string]interface{}{
-	// 	"user_id":      userContext.ID,
-	// 	"resume_url":   uploadedURL,
-	// 	"query_skills": input.Skills,
-	// }
+	if ok := StoreProfile(candidate.ID.String(), uploadedURL, input.Skills); !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to store profile externally"})
 
-	// // Marshal to JSON
-	// jsonData, err := json.Marshal(postPayload)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to marshal JSON", "Error": err.Error()})
-	// 	return
-	// }
-	//
-	// // Send POST request to external service
-	// postURL := "http://0.0.0.0:8000/onboarding/candidate"
-	// // Replace with actual endpoint
-	// req, err := http.NewRequest("POST", postURL, bytes.NewBuffer(jsonData))
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to create request", "Error": err.Error()})
-	// 	return
-	// }
-	// req.Header.Set("Content-Type", "application/json")
-	//
-	// client := &http.Client{}
-	// resp, err := client.Do(req)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"Message": "Request failed", "Error": err.Error()})
-	// 	return
-	// }
-	// defer resp.Body.Close()
-	//
-	// if resp.StatusCode != http.StatusOK {
-	// 	body, _ := io.ReadAll(resp.Body)
-	// 	c.JSON(http.StatusBadGateway, gin.H{"Message": "External request failed", "Response": string(body)})
-	// 	return
-	// }
-	//
+		return
+	}
+
 	database.UpdateOnboardingStatus(userContext.ID, "COMPLETED")
 
 	c.JSON(http.StatusOK, gin.H{"Message": "Candidate created successfully", "Candidate": candidate})

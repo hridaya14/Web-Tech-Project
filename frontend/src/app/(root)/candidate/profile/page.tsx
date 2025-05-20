@@ -77,7 +77,7 @@ export default function CandidateProfile() {
                             <p><span className="text-gray-400">Name:</span> {profile.full_name}</p>
                             <p><span className="text-gray-400">Phone:</span> {profile.phone_number}</p>
                             <p><span className="text-gray-400">Location:</span> {profile.location}</p>
-                            <p><span className="text-gray-400">Experience:</span> {profile.experience} year(s)</p>
+                            <p><span className="text-gray-400">Experience:</span> {profile.experience} month(s)</p>
                         </div>
                     </div>
 
@@ -94,7 +94,7 @@ export default function CandidateProfile() {
                     <div>
                         <h2 className="text-xl font-semibold border-b border-gray-700 pb-2 mb-3">Skills</h2>
                         <div className="flex flex-wrap gap-3 mt-3">
-                            {profile.skills.map((skill, idx) => (
+                            {profile?.skills?.map((skill, idx) => (
                                 <span key={idx} className="px-3 py-1.5 bg-gray-700 rounded-full text-sm">
                                     {skill}
                                 </span>

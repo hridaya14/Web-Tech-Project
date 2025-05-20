@@ -18,7 +18,7 @@ type Candidate struct {
 	PortfolioURL  *string        `json:"portfolio_url" db:"portfolio_url"` // nullable
 	ResumeURL     string         `json:"resume_url" db:"resume_url"`
 	Skills        pq.StringArray `json:"skills" db:"skills"`
-	Experience    int            `json:"experience_years" db:"experience_years"`
+	Experience    int            `json:"experience_months" db:"experience_months"`
 	ExpectedRoles string         `json:"expected_roles" db:"expected_role"`  // ARRAY
 	CurrentStatus string         `json:"current_status" db:"current_status"` // ENUM
 	CreatedAt     time.Time      `json:"created_at" db:"created_at"`
@@ -40,16 +40,16 @@ type Company struct {
 //Handler Definitions
 
 type CandidateRequest struct {
-	FullName        string   `json:"full_name" binding:"required"`
-	Phone           string   `json:"phone_number,omitempty"`
-	Location        string   `json:"location,omitempty"`
-	LinkedInURL     string   `json:"linkedin_url,omitempty"`
-	PortfolioURL    string   `json:"portfolio_url,omitempty"`
-	ResumeURL       string   `json:"resume_url,omitempty"`
-	Skills          []string `json:"skills,omitempty"`
-	ExperienceYears int      `json:"experience_years,omitempty"`
-	ExpectedRole    []string `json:"expected_roles" binding:"required"`
-	CurrentStatus   string   `json:"current_status" binding:"required"`
+	FullName         string   `json:"full_name" binding:"required"`
+	Phone            string   `json:"phone_number,omitempty"`
+	Location         string   `json:"location,omitempty"`
+	LinkedInURL      string   `json:"linkedin_url,omitempty"`
+	PortfolioURL     string   `json:"portfolio_url,omitempty"`
+	ResumeURL        string   `json:"resume_url,omitempty"`
+	Skills           []string `json:"skills,omitempty"`
+	ExperienceMonths int      `json:"experience_months,omitempty"`
+	ExpectedRole     []string `json:"expected_roles" binding:"required"`
+	CurrentStatus    string   `json:"current_status" binding:"required"`
 }
 
 type CompanyRequest struct {

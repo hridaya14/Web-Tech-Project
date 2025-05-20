@@ -28,12 +28,14 @@ const Modal = ({
     );
 };
 
+// Add Score to the Application interface
 interface Application {
     ApplicationID: string;
     CandidateID: string;
     JobID: string;
     Status: string;
     AppliedAt: string;
+    Score?: number; // <-- NEW FIELD
 }
 
 interface JobListing {
@@ -73,11 +75,10 @@ const ApplicationsPage = () => {
                 );
                 // Defensive logging for diagnostics
                 console.log('Backend response:', res.data);
-                // Always assign an array to avoid blank screen
                 let apps = res.data.applications;
                 if (!Array.isArray(apps)) apps = [];
                 setApplications(apps);
-            } catch (err) {
+            } catch {
                 setError('Could not fetch your applications. Please try again.');
                 setApplications([]);
             } finally {
@@ -87,8 +88,7 @@ const ApplicationsPage = () => {
 
         try {
             fetchApplications();
-        } catch (e: any) {
-            setError('Unexpected error in fetching applications: ' + e?.message);
+        } catch {
             setApplications([]);
             setLoading(false);
         }
@@ -105,7 +105,7 @@ const ApplicationsPage = () => {
                 { withCredentials: true }
             );
             setJobDetails(res.data.job);
-        } catch (err: any) {
+        } catch {
             setJobError('Unable to fetch job details.');
         } finally {
             setJobLoading(false);
@@ -134,17 +134,13 @@ const ApplicationsPage = () => {
                 prev.filter((app) => app.ApplicationID !== selectedApp.ApplicationID)
             );
             closeModal();
-        } catch (err: any) {
-            alert(
-                err?.response?.data?.error ||
-                'Could not withdraw application, please try again.'
-            );
+        } catch {
+            alert('Could not withdraw application, please try again.');
         } finally {
             setWithdrawing(false);
         }
     };
 
-    // SAFETY: Error fallback UI
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-900 text-red-400">
@@ -157,7 +153,6 @@ const ApplicationsPage = () => {
         return <p className="text-center mt-6 text-white">Loading...</p>;
     }
 
-    // Defensive: avoid blank screen for any "falsy" applications value
     if (!Array.isArray(applications) || applications.length === 0) {
         return (
             <p className="text-center mt-6 text-white">No Applications Found.</p>
@@ -198,6 +193,13 @@ const ApplicationsPage = () => {
                                 <span className="font-semibold text-gray-300">Applied At:</span>{' '}
                                 {new Date(app.AppliedAt).toLocaleDateString()}
                             </p>
+                            {/* Show Score if present */}
+                            {typeof app.Score !== 'undefined' && (
+                                <p>
+                                    <span className="font-semibold text-gray-300">Score:</span>{' '}
+                                    <span className="font-bold text-cyan-400">{app.Score}%</span>
+                                </p>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -233,6 +235,13 @@ const ApplicationsPage = () => {
                             <span className="font-semibold text-gray-300">Applied At:</span>{' '}
                             {new Date(selectedApp.AppliedAt).toLocaleDateString()}
                         </p>
+                        {/* Show Score if present */}
+                        {typeof selectedApp.Score !== 'undefined' && (
+                            <p>
+                                <span className="font-semibold text-gray-300">Score:</span>{' '}
+                                <span className="font-bold text-cyan-400">{selectedApp.Score}%</span>
+                            </p>
+                        )}
                         <hr className="my-4 border-gray-700" />
                         <h3 className="text-xl font-semibold mb-2">Job Details</h3>
                         {jobLoading && <p>Loading job details...</p>}

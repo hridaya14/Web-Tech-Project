@@ -61,22 +61,23 @@ func GetJobListings(filters models.JobListingFilters) ([]models.JobListing, erro
 	return listings, nil
 }
 
-func CreateApplication(candidateID uuid.UUID, jobID uuid.UUID) error {
+func CreateApplication(candidateID uuid.UUID, jobID uuid.UUID, score int) error {
 
 	query := `
-        INSERT INTO applications (candidate_id, job_id)
-        VALUES ($1, $2)
+        INSERT INTO applications (candidate_id, job_id, score)
+        VALUES ($1, $2, $3)
     `
-	_, err := orm.DB.Exec(query, candidateID, jobID)
+	_, err := orm.DB.Exec(query, candidateID, jobID, score)
 	return err
 
 }
 
 func GetApplicationsByCandidateID(candidateID uuid.UUID) ([]models.Application, error) {
 	query := `
-        SELECT application_id, candidate_id, job_id, status, applied_at
+        SELECT application_id, candidate_id, job_id, score, status, applied_at
         FROM applications
         WHERE candidate_id = $1
+		ORDER BY applied_at
     `
 	var applications []models.Application
 	err := orm.DB.Select(&applications, query, candidateID)
@@ -85,9 +86,10 @@ func GetApplicationsByCandidateID(candidateID uuid.UUID) ([]models.Application, 
 
 func GetApplicationsByJobID(jobID uuid.UUID) ([]models.Application, error) {
 	query := `
-        SELECT application_id, candidate_id, job_id, status, applied_at
+        SELECT application_id, candidate_id, job_id, score, status, applied_at
         FROM applications
         WHERE job_id = $1
+		ORDER BY score
     `
 	var applications []models.Application
 	err := orm.DB.Select(&applications, query, jobID)
@@ -156,6 +158,7 @@ func GetApplicantPoolsByCompanyID(companyID uuid.UUID) ([]models.ApplicantPool, 
 			a.job_id,
 			a.status,
 			a.applied_at,
+			a.score,
 			c.full_name AS candidate_name,
 			c.skills AS candidate_skills
 		FROM applications a
@@ -179,6 +182,7 @@ func GetApplicantPoolsByCompanyID(companyID uuid.UUID) ([]models.ApplicantPool, 
 			ApplicationID:   extApp.ApplicationID,
 			CandidateID:     extApp.CandidateID,
 			JobID:           extApp.JobID,
+			Score:           extApp.Score,
 			Status:          extApp.Status,
 			AppliedAt:       extApp.AppliedAt,
 			CandidateName:   extApp.CandidateName,

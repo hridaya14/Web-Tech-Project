@@ -1,13 +1,12 @@
 package handlers
 
 import (
-	"log"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/hridaya14/Web-Tech-Project/internal/database"
 	"github.com/hridaya14/Web-Tech-Project/internal/models"
+	"log"
+	"net/http"
 )
 
 func CreateJob(c *gin.Context) {
@@ -22,9 +21,26 @@ func CreateJob(c *gin.Context) {
 		return
 	}
 
+	company, err := database.GetCompanyByID(companyID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
 	listing, err := database.CreateJobListing(input, companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to process request"})
+		return
+	}
+
+	if ok := StoreListing(
+		listing.ID.String(),
+		company.CompanyName,
+		listing.Description,
+		listing.Listing_title,
+		listing.Experience_months,
+		listing.Required_skills,
+	); !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to store job listing externally"})
 		return
 	}
 

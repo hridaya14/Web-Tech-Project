@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export const CandidateOnboarding = () => {
-    const router = useRouter()
+    const router = useRouter();
     const [formData, setFormData] = useState({
         full_name: '',
         phone: '',
         location: '',
         linkedin_url: '',
         portfolio_url: '',
-        experience_years: '',
+        experience_months: 0, // integer, default 0
         expected_roles: '',
         current_status: '',
         skills: '',
@@ -18,13 +18,32 @@ export const CandidateOnboarding = () => {
     const [resumeFile, setResumeFile] = useState<File | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value, type } = e.target;
+
+        // Special handling for experience_months to ensure integer and no leading zero
+        if (name === 'experience_months') {
+            // Allow empty string for user to clear the input, but store as 0
+            const val = value.replace(/^0+(?=\d)/, ''); // Remove leading zeros
+            if (val === '') {
+                setFormData(prev => ({ ...prev, experience_months: 0 }));
+            } else {
+                // Only allow non-negative integers
+                const intVal = Math.max(0, parseInt(val, 10) || 0);
+                setFormData(prev => ({ ...prev, experience_months: intVal }));
+            }
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
-            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            const allowedTypes = [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ];
             if (!allowedTypes.includes(file.type)) {
                 alert('Only PDF, DOC, or DOCX files are allowed.');
                 return;
@@ -49,9 +68,8 @@ export const CandidateOnboarding = () => {
         payload.append('location', formData.location);
         payload.append('linkedin_url', formData.linkedin_url);
         payload.append('portfolio_url', formData.portfolio_url);
-        payload.append('experience_years', formData.experience_years);
+        payload.append('experience_months', formData.experience_months.toString());
         payload.append('current_status', formData.current_status);
-
         payload.append('expected_roles', formData.expected_roles);
         payload.append('skills', formData.skills);
 
@@ -63,7 +81,6 @@ export const CandidateOnboarding = () => {
                 method: 'POST',
                 body: payload,
                 credentials: 'include'
-
             });
 
             const result = await res.json();
@@ -72,11 +89,11 @@ export const CandidateOnboarding = () => {
             }
 
             alert('🎉 Candidate profile submitted successfully!');
-            router.push("/candidate/dashboard")
+            router.push("/candidate/dashboard");
             console.log('✅ Server Response:', result);
         } catch (err: any) {
             console.error('Upload Error:', err);
-            router.push("/profile/onboarding")
+            router.push("/profile/onboarding");
         }
     };
 
@@ -89,26 +106,64 @@ export const CandidateOnboarding = () => {
                 <h2 className="text-3xl font-bold text-center text-cyan-400">Candidate Registration</h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {[
-                        { name: 'full_name', placeholder: 'Full Name' },
-                        { name: 'phone', placeholder: 'Phone' },
-                        { name: 'location', placeholder: 'Location' },
-                        { name: 'linkedin_url', placeholder: 'LinkedIn URL', type: 'url' },
-                        { name: 'portfolio_url', placeholder: 'Portfolio URL', type: 'url' },
-                        { name: 'skills', placeholder: 'Skills (comma-separated)' },
-                        { name: 'experience_years', placeholder: 'Years of Experience', type: 'number' }
-                    ].map(({ name, placeholder, type = 'text' }) => (
-                        <input
-                            key={name}
-                            type={type}
-                            name={name}
-                            placeholder={placeholder}
-                            value={formData[name as keyof typeof formData]}
-                            onChange={handleChange}
-                            required={name === 'full_name'}
-                            className="bg-gray-700 p-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                        />
-                    ))}
+                    <input
+                        type="text"
+                        name="full_name"
+                        placeholder="Full Name"
+                        value={formData.full_name}
+                        onChange={handleChange}
+                        required
+                        className="bg-gray-700 p-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    />
+                    <input
+                        type="text"
+                        name="phone"
+                        placeholder="Phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="bg-gray-700 p-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    />
+                    <input
+                        type="text"
+                        name="location"
+                        placeholder="Location"
+                        value={formData.location}
+                        onChange={handleChange}
+                        className="bg-gray-700 p-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    />
+                    <input
+                        type="url"
+                        name="linkedin_url"
+                        placeholder="LinkedIn URL"
+                        value={formData.linkedin_url}
+                        onChange={handleChange}
+                        className="bg-gray-700 p-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    />
+                    <input
+                        type="url"
+                        name="portfolio_url"
+                        placeholder="Portfolio URL"
+                        value={formData.portfolio_url}
+                        onChange={handleChange}
+                        className="bg-gray-700 p-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    />
+                    <input
+                        type="text"
+                        name="skills"
+                        placeholder="Skills (comma-separated)"
+                        value={formData.skills}
+                        onChange={handleChange}
+                        className="bg-gray-700 p-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    />
+                    <input
+                        type="number"
+                        name="experience_months"
+                        placeholder="Months of Experience"
+                        min={0}
+                        value={formData.experience_months === 0 ? '' : formData.experience_months}
+                        onChange={handleChange}
+                        className="bg-gray-700 p-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    />
 
                     <select
                         name="expected_roles"

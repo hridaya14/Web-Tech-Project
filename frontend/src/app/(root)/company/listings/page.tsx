@@ -28,11 +28,10 @@ const initialListing: JobListing = {
     Work_type: '',
     Job_type: '',
     Experience_type: '',
-    Experience_months: '',
+    Experience_months: 0, // <-- integer default
     Salary_range: '',
     Required_skills: [],
 };
-
 
 const Listings: React.FC = () => {
     const router = useRouter();
@@ -71,8 +70,7 @@ const Listings: React.FC = () => {
     const fetchListings = () => {
         setLoading(true);
         setFetchError('');
-        fetch(`${process.env.NEXT_PUBLIC_BASE_URL}${backendUrl}`
-            , { credentials: 'include' })
+        fetch(`${process.env.NEXT_PUBLIC_BASE_URL}${backendUrl}`, { credentials: 'include' })
             .then(res => {
                 if (!res.ok) throw new Error('Could not fetch listings');
                 return res.json();
@@ -91,7 +89,6 @@ const Listings: React.FC = () => {
         fetchListings();
     }, []);
 
-    // Handlers
     const handleCardClick = (listing: JobListing) => {
         setSelectedListing(listing);
         setShowModal(true);
@@ -118,9 +115,14 @@ const Listings: React.FC = () => {
             experience_months: 'Experience_months',
             salary_range: 'Salary_range'
         };
+        const listingField = fieldMapping[name] || (name as keyof JobListing);
 
-        const listingField = fieldMapping[name] || name as keyof JobListing;
-        setForm({ ...form, [listingField]: value });
+        // Ensure experience_months is always a number
+        if (listingField === 'Experience_months') {
+            setForm({ ...form, [listingField]: value === '' ? 0 : parseInt(value, 10) });
+        } else {
+            setForm({ ...form, [listingField]: value });
+        }
     };
 
     const handleSkillsChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -131,15 +133,20 @@ const Listings: React.FC = () => {
         e.preventDefault();
         setFormError('');
         try {
+            // Ensure Experience_months is always an integer in the payload
+            const payload = {
+                ...form,
+                Experience_months: Number(form.Experience_months) || 0
+            };
+
             const resp = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/company/createListing`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                body: JSON.stringify(payload),
                 credentials: 'include'
             });
             if (!resp.ok) throw new Error('Failed to create');
             const newListing = await resp.json();
-            console.log(newListing)
             fetchListings();  // Refetches entire listings list from backend
             setCreating(false);
         } catch (err) {
@@ -174,7 +181,6 @@ const Listings: React.FC = () => {
             alert(err.message || "Could not delete the listing.");
         }
     };
-
 
     return (
         <div className="min-h-[100dvh] bg-gradient-to-br from-slate-800 to-slate-900 px-4 py-10 text-slate-200 font-sans">
@@ -281,7 +287,6 @@ const Listings: React.FC = () => {
                                 Delete
                             </button>
                         </div>
-
                     </div>
                 </Modal>
             )}

@@ -14,7 +14,7 @@ type JobListingRequest struct {
 	Work_type         string   `json:"work_type"`
 	Job_type          string   `json:"job_type"`
 	Experience_type   string   `json:"experience_type"`
-	Experience_months string   `json:"experience_months"`
+	Experience_months int      `json:"experience_months"`
 	Salary_range      string   `json:"salary_range"`
 	Required_skills   []string `json:"required_skills"`
 }
@@ -29,7 +29,7 @@ type JobListing struct {
 	Work_type         string         `db:"work_type"`
 	Job_type          string         `db:"job_type"`
 	Experience_type   string         `db:"experience_level"`
-	Experience_months string         `db:"experience_months"`
+	Experience_months int            `db:"experience_months"`
 	Salary_range      string         `db:"salary_range"`
 	Required_skills   pq.StringArray `db:"required_skills"`
 	CreatedAt         time.Time      `json:"created_at" db:"created_at"`
